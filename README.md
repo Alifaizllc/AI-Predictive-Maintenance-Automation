@@ -2,18 +2,6 @@
 
 **AI-driven failure prediction, automated diagnostics, and real-time maintenance alerting for Industrial IoT systems.**
 
-## 👤 Portfolio Implementation
-
-**Customized by:** Ali Faiz  
-**Role:** Frontend Developer & AI Automation Developer  
-**GitHub:** https://github.com/Alifaizllc  
-**LinkedIn:** https://www.linkedin.com/in/ali-khattak
-
-This repository is a customized portfolio implementation of a publicly available predictive-maintenance project. The automation credentials, Google Sheet reference, Telegram destination, n8n instance metadata, and temporary API tunnel URLs have been removed so the project can be configured with your own environment.
-
----
----
-
 ## 📌 Overview
 
 The **Industrial Predictive Maintenance Platform** predicts industrial machine failures **before they happen** and automates the entire maintenance response — from sensor reading to technician alert — using a modern data engineering and machine learning stack.

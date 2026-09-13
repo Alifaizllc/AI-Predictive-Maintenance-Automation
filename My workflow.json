@@ -1,0 +1,518 @@
+{
+  "name": "AI Predictive Maintenance Automation - Ali Faiz",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 23
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1648,
+        960
+      ],
+      "id": "055dea17-6755-4f0b-a9fa-7d99d75dfb2e",
+      "name": "Schedule Trigger1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "YOUR_SHEET_NAME",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -1424,
+        992
+      ],
+      "id": "728f607f-627a-4b4e-ae47-2bfde1d26003",
+      "name": "Get row(s) in sheet1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR-FAILURE-PREDICTION-API/predict",
+        "sendBody": true,
+        "contentType": "=json",
+        "specifyBody": "json",
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "jsonBody": "={\n  \"machine_type\": {{$json.machine_type}},\n  \"vibration_rms\": {{$json.vibration_rms}},\n  \"temperature_motor\": {{$json.temperature_motor}},\n  \"current_phase_avg\": {{$json.current_phase_avg}},\n  \"pressure_level\": {{$json.pressure_level}},\n  \"rpm\": {{$json.rpm}},\n  \"operating_mode\": {{$json.operating_mode}},\n  \"hours_since_maintenance\": {{$json.hours_since_maintenance}},\n  \"ambient_temp\": {{$json.ambient_temp}}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -752,
+        896
+      ],
+      "id": "5d48f0fa-c9f5-4c60-972c-4d8ccb61ec0c",
+      "name": "HTTP Request2",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of items) {\n\n  const machineMap = {\n    \"CNC\": 0,\n    \"Compressor\": 1,\n    \"Pump\": 2,\n    \"Robotic Arm\": 3\n  };\n\n  const modeMap = {\n    \"idle\": 0,\n    \"normal\": 1,\n    \"peak\": 2\n  };\n\n  item.json.machine_type =\n    machineMap[item.json.machine_type];\n\n  item.json.operating_mode =\n    modeMap[item.json.operating_mode];\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1232,
+        976
+      ],
+      "id": "10f2e692-d43c-46d1-b134-87837d927459",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of items) {\n  item.json.vibration_rms = Number(item.json.vibration_rms);\n  item.json.temperature_motor = Number(item.json.temperature_motor);\n  item.json.current_phase_avg = Number(item.json.current_phase_avg);\n  item.json.pressure_level = Number(item.json.pressure_level);\n  item.json.rpm = Number(item.json.rpm);\n  item.json.hours_since_maintenance = Number(item.json.hours_since_maintenance);\n  item.json.ambient_temp = Number(item.json.ambient_temp);\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1024,
+        960
+      ],
+      "id": "a3b50b6e-e717-46e4-86e2-c2d46c98baaa",
+      "name": "Code in JavaScript6"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR-FAILURE-TYPE-API/predict",
+        "sendBody": true,
+        "contentType": "=json",
+        "specifyBody": "json",
+        "bodyParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "jsonBody": "={\n  \"machine_type\": {{$json.machine_type}},\n  \"vibration_rms\": {{$json.vibration_rms}},\n  \"temperature_motor\": {{$json.temperature_motor}},\n  \"current_phase_avg\": {{$json.current_phase_avg}},\n  \"pressure_level\": {{$json.pressure_level}},\n  \"rpm\": {{$json.rpm}},\n  \"operating_mode\": {{$json.operating_mode}},\n  \"hours_since_maintenance\": {{$json.hours_since_maintenance}},\n  \"ambient_temp\": {{$json.ambient_temp}}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1376,
+        1488
+      ],
+      "id": "e01325ac-17c6-46d4-9d5a-8fc1bb0c7a8c",
+      "name": "HTTP Request3",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -1120,
+        1488
+      ],
+      "id": "93af796c-2859-492e-b078-74617dd0fbd4",
+      "name": "Merge3"
+    },
+    {
+      "parameters": {
+        "jsCode": "const avgVibration =\nitems.reduce((s,i)=>s+Number(i.json.vibration_rms),0)/items.length;\n\nconst avgTemperature =\nitems.reduce((s,i)=>s+Number(i.json.temperature_motor),0)/items.length;\n\nconst avgCurrent =\nitems.reduce((s,i)=>s+Number(i.json.current_phase_avg),0)/items.length;\n\nconst avgPressure =\nitems.reduce((s,i)=>s+Number(i.json.pressure_level),0)/items.length;\n\nconst avgRPM =\nitems.reduce((s,i)=>s+Number(i.json.rpm),0)/items.length;\n\nconst maxPrediction =\nMath.max(...items.map(i=>Number(i.json.prediction)));\n\nconst failureType =\nitems.find(i => i.json.prediction === 1)?.json.failure_type\n?? items[0].json.failure_type;\n\nreturn [{\n  json: {\n    prediction: maxPrediction,\n    failure_type: failureType,\n    machine_type: items[0].json.machine_type,\n    avg_vibration: avgVibration,\n    avg_temperature: avgTemperature,\n    avg_current: avgCurrent,\n    avg_pressure: avgPressure,\n    avg_rpm: avgRPM\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -976,
+        1360
+      ],
+      "id": "a6dab4fe-0901-4db1-b730-ebef878e6e72",
+      "name": "Code in JavaScript7"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Machine Type: {{$json.machine_name}}\n\nFailure Prediction: {{$json.prediction}}\n\nFailure Type: {{$json.failure_name}}\n\nAverage Vibration: {{$json.avg_vibration}}\n\nAverage Temperature: {{$json.avg_temperature}}\n\nAverage Current: {{$json.avg_current}}\n\nAverage Pressure: {{$json.avg_pressure}}\n\nAverage RPM: {{$json.avg_rpm}}\n\nProvide a brief predictive maintenance report with:\n\n1. Failure Analysis (1 sentence)\n2. Root Cause (1 sentence)\n3. Risk Level (Low / Medium / High)\n4. Maintenance Recommendation (1-2 short actions)\n5. Preventive Action (1 short action)\n\nKeep the response under 100 words and use concise bullet points.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -416,
+        1344
+      ],
+      "id": "c6a02180-91e7-4a19-a59f-6b5913657600",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -400,
+        1568
+      ],
+      "id": "805cad40-69f7-421b-b14a-8c0df62a041d",
+      "name": "Google Gemini Chat Model1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const machineMap = {\n  0: \"CNC\",\n  1: \"Compressor\",\n  2: \"Pump\",\n  3: \"Robotic Arm\"\n};\n\nconst failureMap = {\n  0: \"bearing\",\n  1: \"electrical\",\n  2: \"hydraulic\",\n  3: \"motor_overheat\",\n  4: \"none\"\n};\n\nreturn items.map(item => ({\n  json: {\n    ...item.json,\n    machine_name: machineMap[item.json.machine_type],\n    failure_name: failureMap[item.json.failure_type]\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        1376
+      ],
+      "id": "311136d6-8771-4f2a-a150-0a232078e7e5",
+      "name": "Code in JavaScript8"
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=🤖 Predictive Maintenance Report\n\n{{$json.telegram_message}}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        1536
+      ],
+      "id": "f3cf799a-d0de-4f84-bdc9-f1981701bb83",
+      "name": "Send a text message",
+      "webhookId": "d496b648-d7af-4170-9aee-ff402d65f09b"
+    },
+    {
+      "parameters": {
+        "jsCode": "let text = $json.output;\n\ntext = text.replace(/[*_`\\[\\]()~>#+\\-=|{}!]/g, \"\");\n\ntext = text.substring(0, 3000);\n\nreturn [{\n  json: {\n    telegram_message: text\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        1360
+      ],
+      "id": "e1115269-8af5-4ab7-8564-c92eeed8d0a6",
+      "name": "Code in JavaScript9"
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=🟢 MACHINE STATUS: NORMAL\n\nprediction:{{$json.prediction}}\nmachine_name:{{$json.machine_name}}\n✅ No maintenance action required.\n\n",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        352,
+        1008
+      ],
+      "id": "b496b9bd-d768-4697-b080-27a47ca76ef3",
+      "name": "Send a text message1",
+      "webhookId": "d496b648-d7af-4170-9aee-ff402d65f09b"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "552188d2-8b9a-404d-b719-1c11df50dabe",
+              "leftValue": "={{$json.prediction}}",
+              "rightValue": "1",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -304,
+        960
+      ],
+      "id": "b0cc8c3e-c45b-48e0-bd96-143d14e54628",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -512,
+        960
+      ],
+      "id": "472589b7-cfe8-4532-92b9-89c9156fe502",
+      "name": "Merge4"
+    },
+    {
+      "parameters": {
+        "jsCode": "const avgVibration =\nitems.reduce((s,i)=>s+Number(i.json.vibration_rms),0)/items.length;\n\nconst avgTemperature =\nitems.reduce((s,i)=>s+Number(i.json.temperature_motor),0)/items.length;\n\nconst avgCurrent =\nitems.reduce((s,i)=>s+Number(i.json.current_phase_avg),0)/items.length;\n\nconst avgPressure =\nitems.reduce((s,i)=>s+Number(i.json.pressure_level),0)/items.length;\n\nconst avgRPM =\nitems.reduce((s,i)=>s+Number(i.json.rpm),0)/items.length;\n\nconst maxPrediction =\nMath.max(...items.map(i=>Number(i.json.prediction)));\n\nconst failureType =\nitems.find(i => i.json.prediction === 1)?.json.failure_type\n?? items[0].json.failure_type;\n\nreturn [{\n  json: {\n    prediction: maxPrediction,\n    \n    machine_type: items[0].json.machine_type,\n    avg_vibration: avgVibration,\n    avg_temperature: avgTemperature,\n    avg_current: avgCurrent,\n    avg_pressure: avgPressure,\n    avg_rpm: avgRPM\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        976
+      ],
+      "id": "85556233-7111-4438-b2ff-b7372114a850",
+      "name": "Code in JavaScript10"
+    },
+    {
+      "parameters": {
+        "jsCode": "const machineMap = {\n  0: \"CNC\",\n  1: \"Compressor\",\n  2: \"Pump\",\n  3: \"Robotic Arm\"\n};\n\n\n\nreturn items.map(item => ({\n  json: {\n    ...item.json,\n    machine_name: machineMap[item.json.machine_type]\n  \n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        992
+      ],
+      "id": "3508927c-bd39-4eea-a551-212ba86fb7da",
+      "name": "Code in JavaScript11"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript6": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript7": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript8": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript9": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge4": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript10": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript11",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript11": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "nodeGroups": [],
+  "tags": []
+}

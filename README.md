@@ -266,8 +266,4 @@ https://app.powerbi.com/view?r=eyJrIjoiOWU5YTQ0NTMtYTQ4Mi00OWFiLTlhNDEtOTI1N2UzY
 
 ---
 
-## 🔗 Source Attribution
-
-Adapted and customized for portfolio use from the public project:
-https://github.com/Amalmotamed/Predictive-Maintenance-System
 
